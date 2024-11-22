@@ -1,0 +1,207 @@
+use yhwh_bienes_servicios;
+
+
+CREATE TABLE Empleados (
+    id_empleado INT PRIMARY KEY AUTO_INCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    apellido VARCHAR(50) NOT NULL,
+    cedula VARCHAR(20) NOT NULL UNIQUE,
+    telefono VARCHAR(15),
+    id_area INT NOT NULL,  -- Referencia a la tabla Areas
+    cargo VARCHAR(50),
+    FOREIGN KEY (id_area) REFERENCES Area(id_area) ON DELETE CASCADE
+);
+CREATE TABLE Area (
+    id_area INT PRIMARY KEY AUTO_INCREMENT,
+    nombre_area VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT
+);
+
+INSERT INTO Area (nombre_area, descripcion) VALUES
+('Administración', 'Encargada de la gestión y dirección de la empresa.'),
+('Recursos Humanos', 'Gestiona el talento humano y las relaciones laborales.'),
+('Finanzas', 'Responsable de la planificación y control financiero.'),
+('Logística', 'Se encarga de la gestión de la cadena de suministro y distribución.'),
+('Ventas', 'Encargada de la comercialización de productos y servicios.');
+
+INSERT INTO Empleados (nombre, apellido, cedula, telefono, id_area, cargo) VALUES
+('Juan', 'Pérez', '123456789', '3001234567', 1, 'Gerente'),
+('María', 'González', '987654321', '3109876543', 2, 'Analista de Recursos Humanos'),
+('Carlos', 'Rodríguez', '456123789', '3204567890', 3, 'Contador'),
+('Laura', 'Martínez', '321654987', '3116549870', 4, 'Coordinador de Logística'),
+('Sofía', 'Hernández', '789456123', '3157894560', 5, 'Vendedora');
+
+select * from empleados;
+
+
+CREATE TABLE Solicitudes (
+    id_solicitud INT PRIMARY KEY AUTO_INCREMENT,
+    fecha DATE NOT NULL,
+    id_empleado INT NOT NULL,  -- Referencia a la tabla Empleados
+    rubro_presupuestal VARCHAR(100) NOT NULL,
+    total_solicitud DECIMAL(10, 2) DEFAULT 0.00, -- Total de la solicitud
+    FOREIGN KEY (id_empleado) REFERENCES Empleados(id_empleado) ON DELETE CASCADE
+);
+
+INSERT INTO Solicitudes (fecha, id_empleado, rubro_presupuestal, total_solicitud) VALUES
+('2024-10-10', 1, 'Material de Oficina', 300.00),
+('2024-10-11', 2, 'Equipos de Computación', 1500.00),
+('2024-10-12', 3, 'Mantenimiento de Mobiliario', 450.00),
+('2024-10-13', 4, 'Capacitación en Seguridad', 1200.00),
+('2024-10-14', 5, 'Suministros de Limpieza', 200.00);
+
+
+CREATE TABLE Items_Solicitud (
+    id_item INT PRIMARY KEY AUTO_INCREMENT,
+    id_solicitud INT NOT NULL,  -- Referencia a la tabla Solicitudes
+    nombre_bien VARCHAR(100) NOT NULL,
+    cantidad_solicitada INT NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL,
+    valor_unitario DECIMAL(10, 2) NOT NULL,
+    valor_total DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (id_solicitud) REFERENCES Solicitudes(id_solicitud) ON DELETE CASCADE
+);
+
+describe Items_solicitud;
+select * from Items_Solicitud;
+
+
+
+CREATE TABLE Cotizaciones (
+    id_cotizacion INT PRIMARY KEY AUTO_INCREMENT,
+    id_solicitud INT NOT NULL,  -- Referencia a la tabla Solicitudes
+    nit_proveedor INT NOT NULL,  -- Referencia a la tabla Proveedores
+    fecha_cotizacion DATE NOT NULL,
+    monto_total DECIMAL(10, 2) NOT NULL,
+    estado VARCHAR(20) NOT NULL,
+    FOREIGN KEY (id_solicitud) REFERENCES Solicitudes(id_solicitud) ON DELETE CASCADE,
+    FOREIGN KEY (nit_proveedor) REFERENCES Proveedores(nit_proveedor) ON DELETE CASCADE
+);
+
+CREATE TABLE Proveedores (
+    nit_proveedor INT PRIMARY KEY,
+    nombre_proveedor VARCHAR(100) NOT NULL
+);
+
+DROP TABLE IF EXISTS Proveedores;
+describe Proveedores;
+select * from Proveedores;
+INSERT INTO Proveedores (nit_proveedor, nombre_proveedor) VALUES
+(101, 'Proveedores S.A.S.'),
+(102, 'Servicios y Suministros Ltda.'),
+(103, 'Distribuciones XYZ S.A.'),
+(104, 'Materiales ABC S.A.'),
+(105, 'Equipos y Herramientas S.A.S.');
+
+INSERT INTO Cotizaciones (id_cotizacion, id_solicitud, nit_proveedor, fecha_cotizacion, monto_total, estado) VALUES
+(1, 1, 101, '2024-10-01', 1500.00, 'Aprobada'),
+(2, 2, 102, '2024-10-02', 2500.00, 'Pendiente'),
+(3, 3, 103, '2024-10-03', 1200.00, 'Rechazada'),
+(4, 4, 104, '2024-10-04', 3000.00, 'Aprobada'),
+(5, 5, 105, '2024-10-05', 2000.00, 'Pendiente');
+
+
+CREATE TABLE Items_Cotizacion (
+    id_item_cotizacion INT PRIMARY KEY AUTO_INCREMENT,
+    id_cotizacion INT NOT NULL,  -- Referencia a la tabla Cotizaciones
+    nombre_bien VARCHAR(50) NOT NULL,
+    cantidad_solicitada INT NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL,
+    valor_unitario DECIMAL(10, 2) NOT NULL,
+    valor_total DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (id_cotizacion) REFERENCES Cotizaciones(id_cotizacion) ON DELETE CASCADE
+);
+
+INSERT INTO Items_Cotizacion (id_cotizacion, nombre_bien, cantidad_solicitada, unidad_medida, valor_unitario, valor_total) VALUES
+(1, 'Papel A4', 100, 'paquete', 50.00, 5000.00),
+(1, 'Resma de Papel', 10, 'resma', 25.00, 250.00),
+(2, 'Cartucho de Tinta', 5, 'unidad', 75.00, 375.00),
+(3, 'Proyector', 2, 'unidad', 200.00, 400.00),
+(4, 'Sillas de Oficina', 10, 'unidad', 150.00, 1500.00);
+
+select * from Items_Cotizacion;
+
+CREATE TABLE Ordenes_Contractuales (
+    id_orden INT PRIMARY KEY AUTO_INCREMENT,
+    fecha DATE NOT NULL,
+    nit_proveedor INT NOT NULL,  -- Referencia a la tabla Proveedores
+    monto_total DECIMAL(10, 2) NOT NULL,
+    fecha_entrega DATE NOT NULL,
+    FOREIGN KEY (nit_proveedor) REFERENCES Proveedores(nit_proveedor) ON DELETE CASCADE
+);
+INSERT INTO Ordenes_Contractuales (fecha, nit_proveedor, monto_total, fecha_entrega) VALUES
+('2024-10-01', 101, 5500.00, '2024-10-10'),
+('2024-10-02', 102, 1000.00, '2024-10-15'),
+('2024-10-03', 103, 800.00, '2024-10-20'),
+('2024-10-04', 104, 3500.00, '2024-10-18'),
+('2024-10-05', 105, 1200.00, '2024-10-25');
+
+select * from Ordenes_Contractuales;
+
+CREATE TABLE Entradas_Almacen (
+    id_entrada INT PRIMARY KEY AUTO_INCREMENT,
+    fecha DATE NOT NULL,
+    numero_factura VARCHAR(20) NOT NULL,
+    nit_proveedor INT NOT NULL, -- Asegúrate de que el tipo de dato sea INT
+    total_bienes INT NOT NULL,
+    valor_total DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (nit_proveedor) REFERENCES Proveedores(nit_proveedor) ON DELETE CASCADE
+);
+
+INSERT INTO Entradas_Almacen (fecha, numero_factura, nit_proveedor, total_bienes, valor_total) VALUES
+('2024-10-10', 'FAC001', 101, 100, 5500.00),
+('2024-10-11', 'FAC002', 102, 50, 1000.00),
+('2024-10-12', 'FAC003', 103, 30, 800.00),
+('2024-10-13', 'FAC004', 104, 70, 3500.00),
+('2024-10-14', 'FAC005', 105, 20, 1200.00);
+
+CREATE TABLE Items_Entrada (
+    id_item_entrada INT PRIMARY KEY AUTO_INCREMENT,
+    id_entrada INT,  -- Referencia a la tabla Entradas_Almacen
+    nombre_bien VARCHAR(100),
+    cantidad_entregada INT,
+    FOREIGN KEY (id_entrada) REFERENCES Entradas_Almacen(id_entrada) ON DELETE CASCADE
+);
+
+INSERT INTO Items_Entrada (id_entrada, nombre_bien, cantidad_entregada) VALUES
+(6, 'Papel Higiénico', 100),
+(6, 'Jabón', 50),
+(7, 'Toallas de Papel', 30),
+(8, 'Desinfectante', 20),
+(9, 'Platos Desechables', 70);
+
+describe Entradas_Almacen;
+select * from Entradas_Almacen;
+
+select * from Items_Entrada;
+
+
+CREATE TABLE Salidas_Almacen (
+    id_salida INT PRIMARY KEY AUTO_INCREMENT,
+    id_empleado INT,  -- Referencia a la tabla Empleados
+    fecha_salida DATE,
+    fecha_entrega DATE,
+    FOREIGN KEY (id_empleado) REFERENCES Empleados(id_empleado) ON DELETE CASCADE
+);
+
+INSERT INTO Salidas_Almacen (id_empleado, fecha_salida, fecha_entrega) VALUES
+(1, '2024-10-15', '2024-10-16'),
+(2, '2024-10-16', '2024-10-17'),
+(3, '2024-10-17', '2024-10-18'),
+(4, '2024-10-18', '2024-10-19'),
+(5, '2024-10-19', '2024-10-20');
+
+CREATE TABLE Items_Salida (
+    id_item_salida INT PRIMARY KEY AUTO_INCREMENT,
+    id_salida INT,  -- Referencia a la tabla Salidas_Almacen
+    nombre_bien VARCHAR(100),
+    cantidad_entregada INT,
+    FOREIGN KEY (id_salida) REFERENCES Salidas_Almacen(id_salida) ON DELETE CASCADE
+);
+
+INSERT INTO Items_Salida (id_salida, nombre_bien, cantidad_entregada) VALUES
+(1, 'Papel Higiénico', 10),
+(1, 'Toallas de Papel', 5),
+(2, 'Desinfectante', 15),
+(3, 'Jabón de Mano', 20),
+(4, 'Guantes de Latex', 25);
